@@ -18,7 +18,7 @@ class Postera_base(ABC):
 
     MANIFOLD_API_KEY = os.environ["MANIFOLD_API_KEY"]
     assert MANIFOLD_API_KEY, "Error, you need to set the environmental MANIFOLD_API_KEY"
-    SAVE_STEPS_FREQ = 50
+    SAVE_STEPS_FREQ = 5
 
     def __init__(self, url, batch_size, verbose=True, cache_fname_tags="", 
                     cache_fname= os.path.abspath(os.path.join(__file__, "../cache/cache_postera_%(computation_type_tag)s%(cache_fname_tags)s.sqlite"))):
@@ -27,12 +27,17 @@ class Postera_base(ABC):
         self.url = url
         self.batch_size = batch_size
         computation_type_tag = self.computation_type_tag
-        self.cache_fname = cache_fname%locals()
+        #self.cache_fname = cache_fname%locals()
+        self.cache_fname = cache_fname
         self.verbose = verbose
-        self.cache_dirty=False
+        self.cache_dirty=True
         
         self.tmpdir = tempfile.TemporaryDirectory()
+        #self.tmpdir = tempfile.mkdtemp()
+        print("tmpdir:", self.tmpdir)
         self.cache_working_name = os.path.join(self.tmpdir.name, os.path.basename(self.cache_fname))
+        #self.cache_working_name = os.path.join(self.tmpdir, os.path.basename(self.cache_fname))
+        print("cache_working_name:", self.cache_working_name)
         if os.path.isfile(self.cache_fname):
             shutil.copyfile(self.cache_fname, self.cache_working_name)
         self.cache = SqliteDict(self.cache_working_name, autocommit=False)
@@ -75,6 +80,7 @@ class Postera_base(ABC):
         
         
     def pre_search(self, mol_list):
+        print('---PRE SEARCH---')
         mol_list = list(mol_list)
         n_mols = len(mol_list)
         scores = [None]*n_mols
@@ -102,6 +108,7 @@ class Postera_base(ABC):
           selected_mols_smis = smiles_list[i*self.batch_size:(i+1)*self.batch_size]
           url, data = self.prepateQueryData( selected_mols_smis)
           if self.verbose: print("lauching query %d (%s)..."%(i, url))
+          print(data)
           r = requests.post(url, json=data, headers={"X-API-KEY": Postera_base.MANIFOLD_API_KEY})
           if r.ok:
             json_out = r.json()
@@ -116,9 +123,12 @@ class Postera_base(ABC):
             else:
                 results = [ json_out.get("results", json_out)]
             for (j, smi), result in zip(selected_mols_smis, results):
+                print(result)
                 return_value = self.geResultFromRecord(result)
                 self.storeResultToCache(smi, result)
                 scores[j] = return_value
+                print('---SAVING CACHE---')
+                self.save_cache()
 
           else:
             print( "query %d failed!!"%i )
@@ -163,7 +173,7 @@ class Postera_base(ABC):
         
         smiles_results = map(lambda m_r: ( Chem.MolToSmiles(m_r[0]), m_r[1]), filter(lambda m_r: m_r[0] is not None, mol_results ))
         try:
-            smiles, preds = zip(* smiles_results )
+            smiles, preds = zip(* smiles_results ) # should smiles, preds be the query smiles and all the preds from that query?
         except ValueError:
             return None
         return preds
@@ -207,13 +217,13 @@ class Postera_base(ABC):
                     else:
                         delimiter="\t"
                         titleLine=False
-                    suppl = Chem.SmilesMolSupplier(fname_or_smis, smilesColumn=smilesColumn, nameColumn=False, titleLine=titleLine, delimiter=delimiter)
+                    suppl = Chem.rdmolfiles.SmilesMolSupplier(fname_or_smis, smilesColumn=smilesColumn, nameColumn=False, titleLine=titleLine, delimiter=delimiter)
             mols = ( mol for mol in tqdm.tqdm(suppl, total=len(suppl)) )
         else:
             smiles = fname_or_smis.split(",")
             mols = ( Chem.MolFromSmiles(smi) for smi in tqdm.tqdm(smiles, total=len(smiles)) )
             
-        if len(argv)>4:
+        if len(argv)>3:
             take_first_n = int(argv[3])
             mols = islice(mols, take_first_n)
         return mols

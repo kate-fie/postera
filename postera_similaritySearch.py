@@ -120,7 +120,7 @@ if __name__ == "__main__":
     mols = Postera_similaritySearch.parser()
     # mols = Postera_similaritySearch.parser(["postera_similaritySearch.py", "~/oxford/myProjects/deepLearningCompounds/rawData/compoundsCost/Mcule/_mcule_400K_testSet.csv", "1", "10"])
 
-#    psa= Postera_similaritySearch( verbose=False)
+    psa= Postera_similaritySearch( verbose=False)
 #     psa= Postera_similaritySearch(cache_fname="prueba_cache.sqlite", verbose=True, maxResultPages=5, maxPrice=100, withPurchaseInfo=True, vendors=["mcule", "mcule_ultimate",])
     preds = psa.search_from_molecules_generator( mols )
     print(preds)
