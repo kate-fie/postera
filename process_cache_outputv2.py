@@ -100,7 +100,6 @@ class RouteAnalysis:
         :return: DataFrame of organized metadata for each route found for query smiles.
         """
         data = []
-        scaffold_smiles = 'O=C(C1CN([*:0])C(c2ccc(Cl)cc21)=O)Nc3c(cccc4)c4cnc3'
         encoded_reactions = [
             "Amidation",
             "Amide schotten - baumann",
@@ -165,7 +164,7 @@ class RouteAnalysis:
             # car_route = any(any(name in term for term in postera_terminology_reactions) for name in rxn_order)
 
             data.append({
-                'SMILES': smile,
+                'smiles': smile,
                 #'CAR_route': car_route,
                 'num_steps': num_steps,
                 'rxn_order_first_to_last': rxn_order,
@@ -184,7 +183,7 @@ class RouteAnalysis:
                 self.df = pd.concat([self.df, self.analyse_routes(smile, dictionary)])
                 self.all_reactions_seen(dictionary)
             else:
-                print(f'SMILES string {self.query_smiles} not found in the database. Continuing to next SMILES string.')
+                print(f'SMILES string {smile} not found in the database. Continuing to next SMILES string.')
                 continue
         if self.num_steps is not None:
             # Saving csv of all reaction information to only include specified number of steps
@@ -214,20 +213,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # TODO: Could parallelize search if searching for many SMILES
-    # Load the smiles from the CSV file
+    # Load the SMILES from the CSV file
+    smiles_list = []
     with open(args.smiles, 'r') as f:
         reader = csv.reader(f)
-        next(reader, None)  # skip the headers
-        smiles_list = list(reader)
+        header = next(reader)
+        assert 'smiles' in header, 'CSV must have a column named "smiles"'
+        smiles_index = header.index('smiles')
+        for row in reader:
+            smiles_list.append(row[smiles_index])
 
     # Flatten the list if the CSV has only one column
-    smiles_list = [item for sublist in smiles_list for item in sublist]
+    # smiles_list = [item for sublist in smiles_list for item in sublist]
 
+    print(f'SMILES to search: {smiles_list}')
     print(f'Cache path provided: {args.table_file_path}')
     print(f'Results directory provided: {args.results_dir}')
     if args.retrosynthesis:
         print(f'---Performing retrosynthesis search---')
-        print(f'Number of steps you are looking for: {args.num_steps}')
+        if args.num_steps is None:
+            print(f'Number of steps you are looking for: All')
+        else:
+            print(f'Number of steps you are looking for: {args.num_steps}')
         reaction_table = PosteraTable(args.table_file_path)
 
         # Pass the list of smiles to the RouteAnalysis class

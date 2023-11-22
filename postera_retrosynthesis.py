@@ -5,8 +5,8 @@ from postera_base import Postera_base
 
 class Postera_RsPlan(Postera_base):
 
-    def __init__(self, maxSearchDepth=4, use_only_diamond_reactions=False, ignore_zero_steps=False,
-                 catalogues=["generic", "mcule"], customBuildingBlock=[], cache_fname_tags='', verbose=True):
+    def __init__(self, maxSearchDepth=3, use_only_diamond_reactions=False, ignore_zero_steps=False,
+                 catalogues=["mcule_ultimate", "generic", "molport", "mcule", "enamine_bb", 'enamine'], customBuildingBlock=[], cache_fname_tags='D68EV3CPROA_OCT10', verbose=True):
 
         url = "https://api.postera.ai/api/v1/retrosynthesis/"
         batch_size = 10
@@ -74,18 +74,13 @@ if __name__ == "__main__":
 
     '''
     mols = Postera_RsPlan.parser()
-    psa = Postera_RsPlan(maxSearchDepth=4, use_only_diamond_reactions=True,
+    psa = Postera_RsPlan(maxSearchDepth=3, use_only_diamond_reactions=False,
                          ignore_zero_steps=True,
-                         catalogues=["mcule_ultimate", "enamine_real", "wuxi_bb_screening", "sigma", "generic",
-                                     "molport", "emolecules", "mcule", "wuxi_galaxi", "enamine_bb", "enamine_made"],
-                         cache_fname_tags='scaffold_restrict',
+                         catalogues=["mcule_ultimate", "generic", "molport", "mcule", "enamine_bb", "enamine_made", "enamine_real"],
+                         cache_fname_tags='D68EV3CPROA_OCT10',
                          verbose=True)
     preds = psa.search_from_molecules_generator(mols)
     print(preds)
-
-    for smi, pred in zip(mols, preds):
-        with open("Libinvent_retrosynthesis_output_June20.csv", "w") as f:
-            f.write("%s\t%s\n" % (smi, pred))
 
     '''
 python postera_retrosynthesis.py  ~/oxford/myProjects/deepLearningCompounds/rawData/compoundsCost/Mcule/_mcule_400K_testSet.csv 1 200

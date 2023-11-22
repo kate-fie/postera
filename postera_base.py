@@ -18,10 +18,11 @@ class Postera_base(ABC):
 
     MANIFOLD_API_KEY = os.environ["MANIFOLD_API_KEY"]
     assert MANIFOLD_API_KEY, "Error, you need to set the environmental MANIFOLD_API_KEY"
-    SAVE_STEPS_FREQ = 5
+    SAVE_STEPS_FREQ = 2
 
+# TODO: figure out cache_fname_saving
     def __init__(self, url, batch_size, verbose=True, cache_fname_tags="", 
-                    cache_fname= os.path.abspath(os.path.join(__file__, "../cache/cache_postera_%(computation_type_tag)s%(cache_fname_tags)s.sqlite"))):
+                    cache_fname= os.path.abspath(os.path.join(__file__, f"../cache/D68EV3CPROA_OCT10_all_rxns.sqlite"))):
         
 
         self.url = url
@@ -81,6 +82,7 @@ class Postera_base(ABC):
         
     def pre_search(self, mol_list):
         print('---PRE SEARCH---')
+        print(self.cache)
         mol_list = list(mol_list)
         n_mols = len(mol_list)
         scores = [None]*n_mols
@@ -97,6 +99,8 @@ class Postera_base(ABC):
                 scores[i] = None
 
         n_to_compute = len(smiles_list)
+        print('---DONE WITH PRESEARCH---')
+        print(zip(smiles_list, scores))
         return mol_list, scores,  smiles_list, n_to_compute
         
     def search(self, mol_list):
@@ -132,7 +136,9 @@ class Postera_base(ABC):
 
           else:
             print( "query %d failed!!"%i )
-            print( r )
+            print(f"Request failed with status code: {r.status_code}")
+            print(
+                r.text)  # This will print the content of the response which often contains a more detailed error message
             if r.status_code == 429:
                 self.save_cache(closeDb=True)
 #                raise Exception("Too many queries")

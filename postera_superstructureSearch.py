@@ -10,8 +10,8 @@ class Postera_superstructureSearch(Postera_base):
 
     def __init__(self, catalogues=["mcule_ultimate", "enamine_real", "wuxi_bb_screening", "sigma", "generic",
                                      "molport", "emolecules", "mcule", "wuxi_galaxi", "enamine_bb", "enamine_made"], cache_fname_tags=[], vendors=None, patents=None, useThirdParties=False,
-                 withPurchaseInfo=False,
-                 maxPrice=None, maxResultPages=5, verbose=True, *args, **kwargs):
+                 withPurchaseInfo=True,
+                 maxPrice=None, maxResultPages=3, verbose=True, *args, **kwargs):
 
         url = "https://api.postera.ai/api/v1/superstructure/"
         batch_size = 1
@@ -73,7 +73,7 @@ class Postera_superstructureSearch(Postera_base):
             next_page = json_out["nextPage"] # None when there is not another page of results
             return json_out, next_page
         else:
-            print("query %d failed!!" % j)
+            print("query %d failed!!")
             print(r)
             if r.status_code == 429:
                 self.save_cache(closeDb=True)
@@ -92,7 +92,7 @@ class Postera_superstructureSearch(Postera_base):
         else:
             query_data["patentDatabases"] = ["all"]
         if self.useThirdParties:
-            query_data["queryThirdPartyServices"] = True
+            query_data["queryThirdPartyServices"] = False
         if self.withPurchaseInfo:
             query_data["withPurchaseInfo"] = True
         if self.maxPrice:
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     '''
 
     mols = Postera_superstructureSearch.parser()
-    psa = Postera_superstructureSearch(catalogues=["enamine_bb"],
+    psa = Postera_superstructureSearch(catalogues=["mcule_ultimate", "generic", "molport", "mcule", "enamine_bb"],
                                        cache_fname_tags='enamine')
     preds = psa.search_from_molecules_generator(mols)
     print(preds) # Want to print preds with query molecule and found molecules

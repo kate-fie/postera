@@ -5,13 +5,14 @@ from postera_base import Postera_base
 class Postera_exactSearch(Postera_base):
 
 
-    def __init__(self, verbose=True):
+    def __init__(self, catalogues=["mcule_ultimate", "generic", "molport", "mcule", "enamine_bb"], verbose=True):
         
         
         url = "https://api.postera.ai/api/v1/exact/"
         batch_size = 100
+        self.catalogues = catalogues
 
-        super(type(self), self).__init__(  url, batch_size, verbose=verbose, 
+        super(type(self), self).__init__(  url, batch_size, verbose=verbose,
                                             cache_fname_tags="")
         
     @property
@@ -32,11 +33,20 @@ class Postera_exactSearch(Postera_base):
         return (t, cost)
                 
     def geResultFromRecord(self, record):
+        # if 'error' in record:
+        #     result = (np.nan, np.nan)
+        # else:
+        #     result = self._retrieveLeadTimeAndPriceFromRecord(record)
         if 'error' in record:
-            result = (np.nan, np.nan)
+            valid_found = None
         else:
-            result = self._retrieveLeadTimeAndPriceFromRecord(record)
-        return result
+            valid_found = []
+            valid_found.append(record[0]['smiles'])
+            for result in record:
+                print(result["catalogName"])
+                if result["catalogName"] in self.catalogues:
+                    valid_found.append(result)
+        return valid_found
         
     def geResultFromCache(self, smi):
         return self.geResultFromRecord(self.cache[smi])
@@ -58,7 +68,7 @@ if __name__ == "__main__":
     
 #    test(); import sys; sys.exit(0)
     mols = Postera_exactSearch.parser()
-    psa= Postera_exactSearch( verbose=False)
+    psa= Postera_exactSearch(catalogues=["mcule_ultimate", "generic", "molport", "mcule", "enamine_bb"], verbose=True)
     preds = psa.search_from_molecules_generator( mols )
     print(preds)
     
